@@ -41,6 +41,10 @@ android {
 
 dependencies {
 
+    // Logback для логирования
+    implementation("com.github.tony19:logback-android:3.0.0")
+    implementation("org.slf4j:slf4j-api:2.0.7")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
