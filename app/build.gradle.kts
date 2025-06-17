@@ -41,6 +41,8 @@ android {
 
 dependencies {
 
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
     // Logback для логирования
     implementation("com.github.tony19:logback-android:3.0.0")
     implementation("org.slf4j:slf4j-api:2.0.7")

@@ -3,6 +3,8 @@ package com.grotesquer.cybernotes.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val primaryDark = Color(0xFF00E676)
+val matrixGreen = primaryDark
+
 val onPrimaryDark = Color(0xFF003920)
 val primaryContainerDark = Color(0xFF00512D)
 val onPrimaryContainerDark = Color(0xFF5AFF93)

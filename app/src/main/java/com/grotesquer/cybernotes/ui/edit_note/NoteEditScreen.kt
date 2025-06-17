@@ -1,5 +1,12 @@
 package com.grotesquer.cybernotes.ui.edit_note
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,20 +32,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,13 +61,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
+import com.grotesquer.cybernotes.ui.list_notes.ImportanceIndicator
+import com.grotesquer.cybernotes.ui.theme.matrixGreen
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -71,77 +91,124 @@ fun NoteEditScreen(
     var showColorPicker by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Редактирование заметки") },
-                actions = {
-                    TextButton(onClick = { onCancel() }) {
-                        Text("Отмена")
-                    }
-                    TextButton(onClick = { onSave(editedNote) }) {
-                        Text("Сохранить")
-                    }
+    val infiniteTransition = rememberInfiniteTransition()
+    val scanLinePosition by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .drawWithCache {
+                val gradient = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        matrixGreen.copy(alpha = 0.1f),
+                        Color.Transparent
+                    ),
+                    startY = size.height * scanLinePosition - 100f,
+                    endY = size.height * scanLinePosition + 100f
+                )
+                onDrawBehind {
+                    drawRect(gradient)
                 }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .padding(16.dp)
-        ) {
-            NoteTitleField(
-                title = editedNote.title,
-                onTitleChange = { editedNote = editedNote.copy(title = it) }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            NoteContentField(
-                content = editedNote.content,
-                onContentChange = { editedNote = editedNote.copy(content = it) }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SelfDestructSection(
-                hasSelfDestruct = editedNote.selfDestructDate != null,
-                selfDestructDate = editedNote.selfDestructDate,
-                onSelfDestructChange = { enabled ->
-                    editedNote = editedNote.copy(
-                        selfDestructDate = if (enabled) LocalDate.now().plusDays(7) else null
+            }
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "РЕДАКТИРОВАНИЕ ЗАМЕТКИ",
+                            color = matrixGreen,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    },
+                    actions = {
+                        TextButton(onClick = { onCancel() }) {
+                            Text("ОТМЕНА", color = matrixGreen)
+                        }
+                        TextButton(onClick = { onSave(editedNote) }) {
+                            Text("СОХРАНИТЬ", color = matrixGreen)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Black.copy(alpha = 0.8f)
                     )
-                },
-                onDateSelected = { date ->
-                    editedNote = editedNote.copy(selfDestructDate = date)
-                    showDatePicker = false
-                },
-                showDatePicker = showDatePicker,
-                onShowDatePicker = { showDatePicker = it }
-            )
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+            ) {
+                MatrixTextField(
+                    value = editedNote.title,
+                    onValueChange = { editedNote = editedNote.copy(title = it) },
+                    label = "НАЗВАНИЕ",
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            ColorSelectionSection(
-                selectedColor = Color(editedNote.color),
-                onColorSelected = { color ->
-                    editedNote = editedNote.copy(color = color.toArgb())
-                },
-                showColorPicker = showColorPicker,
-                onShowColorPicker = { showColorPicker = it }
-            )
+                MatrixTextField(
+                    value = editedNote.content,
+                    onValueChange = { editedNote = editedNote.copy(content = it) },
+                    label = "СОДЕРЖАНИЕ",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 150.dp),
+                    maxLines = Int.MAX_VALUE
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            ImportanceSelectionSection(
-                importance = editedNote.importance,
-                onImportanceSelected = { importance ->
-                    editedNote = editedNote.copy(importance = importance)
-                }
-            )
+                SelfDestructSection(
+                    hasSelfDestruct = editedNote.selfDestructDate != null,
+                    selfDestructDate = editedNote.selfDestructDate,
+                    onSelfDestructChange = { enabled ->
+                        editedNote = editedNote.copy(
+                            selfDestructDate = if (enabled) LocalDate.now().plusDays(7) else null
+                        )
+                    },
+                    onDateSelected = { date ->
+                        editedNote = editedNote.copy(selfDestructDate = date)
+                        showDatePicker = false
+                    },
+                    showDatePicker = showDatePicker,
+                    onShowDatePicker = { showDatePicker = it }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ColorSelectionSection(
+                    selectedColor = Color(editedNote.color),
+                    onColorSelected = { color ->
+                        editedNote = editedNote.copy(color = color.toArgb())
+                    },
+                    showColorPicker = showColorPicker,
+                    onShowColorPicker = { showColorPicker = it }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ImportanceSelectionSection(
+                    importance = editedNote.importance,
+                    onImportanceSelected = { importance ->
+                        editedNote = editedNote.copy(importance = importance)
+                    }
+                )
+            }
         }
     }
 
@@ -168,34 +235,47 @@ fun NoteEditScreen(
 }
 
 @Composable
-private fun NoteTitleField(
-    title: String,
-    onTitleChange: (String) -> Unit,
+private fun MatrixTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1
 ) {
-    OutlinedTextField(
-        value = title,
-        onValueChange = onTitleChange,
-        label = { Text("Название заметки") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-    )
-}
+    var isFocused by remember { mutableStateOf(false) }
 
-@Composable
-private fun NoteContentField(
-    content: String,
-    onContentChange: (String) -> Unit,
-) {
     OutlinedTextField(
-        value = content,
-        onValueChange = onContentChange,
-        label = { Text("Текст заметки") },
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 150.dp),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-        maxLines = Int.MAX_VALUE
+        value = value,
+        onValueChange = onValueChange,
+        label = {
+            Text(
+                text = label,
+                color = matrixGreen.copy(alpha = 0.7f),
+                fontFamily = FontFamily.Monospace
+            )
+        },
+        modifier = modifier
+            .onFocusChanged { isFocused = it.isFocused },
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = matrixGreen,
+            fontFamily = FontFamily.Monospace
+        ),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Black.copy(alpha = 0.5f),
+            unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
+            focusedTextColor = matrixGreen,
+            unfocusedTextColor = matrixGreen.copy(alpha = 0.8f),
+            cursorColor = matrixGreen,
+            focusedIndicatorColor = matrixGreen,
+            unfocusedIndicatorColor = matrixGreen.copy(alpha = 0.5f),
+            focusedLabelColor = matrixGreen,
+            unfocusedLabelColor = matrixGreen.copy(alpha = 0.5f)
+        ),
+        singleLine = maxLines == 1,
+        maxLines = maxLines,
+        keyboardOptions = KeyboardOptions(
+            imeAction = if (maxLines == 1) ImeAction.Next else ImeAction.Default
+        )
     )
 }
 
@@ -214,12 +294,20 @@ private fun SelfDestructSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Добавить дату самоуничтожения",
+                text = "САМОУНИЧТОЖЕНИЕ",
+                color = matrixGreen,
+                fontFamily = FontFamily.Monospace,
                 modifier = Modifier.weight(1f)
             )
             Switch(
                 checked = hasSelfDestruct,
-                onCheckedChange = onSelfDestructChange
+                onCheckedChange = onSelfDestructChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = matrixGreen,
+                    checkedTrackColor = matrixGreen.copy(alpha = 0.5f),
+                    uncheckedThumbColor = Color.Gray,
+                    uncheckedTrackColor = Color.DarkGray
+                )
             )
         }
 
@@ -227,11 +315,19 @@ private fun SelfDestructSection(
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = { onShowDatePicker(true) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Black,
+                    contentColor = matrixGreen
+                ),
+                border = BorderStroke(1.dp, matrixGreen)
             ) {
                 Icon(Icons.Default.DateRange, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = selfDestructDate?.toString() ?: "Выберите дату")
+                Text(
+                    text = selfDestructDate?.toString() ?: "ВЫБЕРИТЕ ДАТУ",
+                    fontFamily = FontFamily.Monospace
+                )
             }
         }
     }
@@ -245,12 +341,17 @@ private fun ColorSelectionSection(
     onShowColorPicker: (Boolean) -> Unit,
 ) {
     Column {
-        Text(text = "Цвет заметки:", style = MaterialTheme.typography.labelLarge)
+        Text(
+            text = "ЦВЕТ ЗАМЕТКИ:",
+            color = matrixGreen,
+            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelLarge
+        )
         Spacer(modifier = Modifier.height(8.dp))
 
         val defaultColors = listOf(
             Color.Red,
-            Color.Green,
+            matrixGreen,
             Color.Blue,
             Color.Yellow,
             Color.Cyan,
@@ -264,7 +365,7 @@ private fun ColorSelectionSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             defaultColors.forEach { color ->
-                ColorSelectionItem(
+                MatrixColorSelectionItem(
                     color = color,
                     isSelected = color == selectedColor,
                     onColorSelected = { onColorSelected(color) }
@@ -275,8 +376,8 @@ private fun ColorSelectionSection(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color.White)
-                    .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
+                    .background(Color.Black)
+                    .border(1.dp, matrixGreen, RoundedCornerShape(4.dp))
                     .clickable { onShowColorPicker(true) }
                     .pointerInput(Unit) {
                         detectDragGestures { _, _ ->
@@ -288,11 +389,11 @@ private fun ColorSelectionSection(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            brush = Brush.horizontalGradient(
                                 colors = listOf(
                                     Color.Red,
                                     Color.Yellow,
-                                    Color.Green,
+                                    matrixGreen,
                                     Color.Cyan,
                                     Color.Blue,
                                     Color.Magenta
@@ -304,6 +405,7 @@ private fun ColorSelectionSection(
                     Icon(
                         Icons.Default.Check,
                         contentDescription = null,
+                        tint = matrixGreen,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -313,7 +415,7 @@ private fun ColorSelectionSection(
 }
 
 @Composable
-private fun ColorSelectionItem(
+private fun MatrixColorSelectionItem(
     color: Color,
     isSelected: Boolean,
     onColorSelected: () -> Unit,
@@ -325,7 +427,7 @@ private fun ColorSelectionItem(
             .background(color)
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) Color.Black else Color.Gray,
+                color = if (isSelected) matrixGreen else Color.Gray,
                 shape = RoundedCornerShape(4.dp)
             )
             .clickable(onClick = onColorSelected)
@@ -334,40 +436,9 @@ private fun ColorSelectionItem(
             Icon(
                 Icons.Default.Check,
                 contentDescription = null,
+                tint = Color.Black,
                 modifier = Modifier.align(Alignment.Center)
             )
-        }
-    }
-}
-
-@Composable
-private fun ImportanceSelectionSection(
-    importance: Importance,
-    onImportanceSelected: (Importance) -> Unit,
-) {
-    Column {
-        Text(text = "Важность:", style = MaterialTheme.typography.labelLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Importance.entries.forEach { item ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onImportanceSelected(item) }
-            ) {
-                Checkbox(
-                    checked = importance == item,
-                    onCheckedChange = { onImportanceSelected(item) }
-                )
-                Text(
-                    text = when (item) {
-                        Importance.LOW -> "\uD83D\uDE34 Неважная"
-                        Importance.NORMAL -> "\uD83D\uDE4F Обычная"
-                        Importance.HIGH -> "❗\uFE0F Сверхважная"
-                    }
-                )
-            }
         }
     }
 }
@@ -400,17 +471,99 @@ private fun DatePickerDialog(
                         )
                     }
                     onDismiss()
-                }
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = matrixGreen
+                )
             ) {
-                Text("OK")
+                Text("ПОДТВЕРДИТЬ", fontFamily = FontFamily.Monospace)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = matrixGreen
+                )
+            ) {
+                Text("ОТМЕНА", fontFamily = FontFamily.Monospace)
+            }
+        },
+    ) {
+        DatePicker(
+            title = {
+                Text(
+                    "ВЫБЕРИТЕ ДАТУ",
+                    color = matrixGreen,
+                    fontFamily = FontFamily.Monospace
+                )
+            },
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                containerColor = Color.Black,
+                titleContentColor = matrixGreen,
+                headlineContentColor = matrixGreen,
+                weekdayContentColor = matrixGreen,
+                subheadContentColor = matrixGreen,
+                navigationContentColor = matrixGreen,
+                yearContentColor = matrixGreen,
+                currentYearContentColor = matrixGreen,
+                selectedYearContentColor = Color.Black,
+                selectedYearContainerColor = matrixGreen,
+                dayContentColor = matrixGreen,
+                disabledDayContentColor = matrixGreen.copy(alpha = 0.3f),
+                selectedDayContentColor = Color.Black,
+                selectedDayContainerColor = matrixGreen,
+                disabledSelectedDayContainerColor = matrixGreen.copy(alpha = 0.3f),
+                todayContentColor = matrixGreen,
+                todayDateBorderColor = matrixGreen
+            )
+        )
+    }
+}
+
+@Composable
+private fun ImportanceSelectionSection(
+    importance: Importance,
+    onImportanceSelected: (Importance) -> Unit,
+) {
+    Column {
+        Text(
+            text = "Важность:",
+            style = MaterialTheme.typography.labelLarge,
+            color = matrixGreen
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Importance.entries.forEach { item ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onImportanceSelected(item) }
+                    .padding(vertical = 4.dp)
+            ) {
+                ImportanceIndicator(importance = item)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = when (item) {
+                        Importance.LOW -> "Неважная"
+                        Importance.NORMAL -> "Обычная"
+                        Importance.HIGH -> "Сверхважная"
+                    },
+                    color = matrixGreen,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.weight(1f)
+                )
+                RadioButton(
+                    selected = importance == item,
+                    onClick = { onImportanceSelected(item) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = matrixGreen,
+                        unselectedColor = Color.Gray
+                    )
+                )
             }
         }
-    ) {
-        DatePicker(state = datePickerState)
     }
 }
