@@ -1,8 +1,7 @@
 package com.grotesquer.cybernotes.data
 
 import com.grotesquer.cybernotes.model.Note
-import com.grotesquer.cybernotes.model.json
-import com.grotesquer.cybernotes.model.parse
+import com.grotesquer.cybernotes.model.Note.Companion.json
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.io.File
