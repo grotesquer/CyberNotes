@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CalendarLocale
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerState
@@ -72,7 +71,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
-import com.grotesquer.cybernotes.ui.list_notes.ImportanceIndicator
+import com.grotesquer.cybernotes.ui.elements.ColorPickerDialog
+import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
 import com.grotesquer.cybernotes.ui.theme.matrixGreen
 import java.time.Instant
 import java.time.LocalDate
@@ -124,17 +124,13 @@ fun NoteEditScreen(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = {
-                        Text(
-                            "РЕДАКТИРОВАНИЕ ЗАМЕТКИ",
-                            color = matrixGreen,
-                            fontFamily = FontFamily.Monospace
-                        )
+                    title = {},
+                    navigationIcon = {
+                        TextButton(onClick = { onCancel() }) {
+                            Text("ОТМЕНА", color = Color.Red)
+                        }
                     },
                     actions = {
-                        TextButton(onClick = { onCancel() }) {
-                            Text("ОТМЕНА", color = matrixGreen)
-                        }
                         TextButton(onClick = { onSave(editedNote) }) {
                             Text("СОХРАНИТЬ", color = matrixGreen)
                         }
@@ -150,7 +146,7 @@ fun NoteEditScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .verticalScroll(scrollState)
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 MatrixTextField(
                     value = editedNote.title,
@@ -491,13 +487,6 @@ private fun DatePickerDialog(
         },
     ) {
         DatePicker(
-            title = {
-                Text(
-                    "ВЫБЕРИТЕ ДАТУ",
-                    color = matrixGreen,
-                    fontFamily = FontFamily.Monospace
-                )
-            },
             state = datePickerState,
             colors = DatePickerDefaults.colors(
                 containerColor = Color.Black,

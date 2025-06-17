@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.ui.edit_note.NoteEditScreen
 import com.grotesquer.cybernotes.ui.list_notes.NotesListScreen
+import com.grotesquer.cybernotes.ui.list_notes.NotesListViewModel
 
 
 @Composable

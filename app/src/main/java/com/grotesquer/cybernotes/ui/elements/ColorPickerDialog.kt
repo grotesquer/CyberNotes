@@ -1,4 +1,4 @@
-package com.grotesquer.cybernotes.ui.edit_note
+package com.grotesquer.cybernotes.ui.elements
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ColorPickerDialog(
     initialColor: Color,

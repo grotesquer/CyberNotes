@@ -1,11 +1,9 @@
 package com.grotesquer.cybernotes.ui.list_notes
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -33,42 +31,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
+import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
+import com.grotesquer.cybernotes.ui.elements.SwipeableWrapper
 import com.grotesquer.cybernotes.ui.theme.matrixGreen
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotesListScreen(
-    onNoteClick: (Note) -> Unit,
-    onAddNote: () -> Unit
+    viewModel: NotesListViewModel = NotesListViewModel(),
+    onNoteClick: (Note) -> Unit = { viewModel.handleEvent(NotesListEvent.SelectNote(it)) },
+    onAddNote: () -> Unit = { viewModel.handleEvent(NotesListEvent.AddNote) }
 ) {
-    val notes = remember {
-        listOf(
-            Note.create(
-                title = "System Alert",
-                content = "Neural network anomaly detected in sector 7",
-                importance = Importance.HIGH
-            ),
-            Note.create(
-                title = "Data Stream",
-                content = "Monitoring encrypted channels...",
-                importance = Importance.NORMAL
-            ),
-            Note.create(
-                title = "Code Fragment",
-                content = "01001000 01101001 00100000 01010100 01101000 01100101 01110010 01100101",
-                importance = Importance.LOW
-            ),
-            Note.create(
-                title = "Security Breach",
-                content = "Unauthorized access attempt from external node",
-                importance = Importance.HIGH
-            ),
-            Note.create(
-                title = "Maintenance Log",
-                content = "System diagnostics running... All circuits nominal",
-                importance = Importance.NORMAL
-            )
-        )
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is NotesListEffect.NavigateToNoteDetail -> {
+                    onNoteClick(effect.note)
+                }
+                NotesListEffect.NavigateToAddNote -> {
+                    onAddNote()
+                }
+            }
+        }
     }
 
     val infiniteTransition = rememberInfiniteTransition()
@@ -112,19 +98,29 @@ fun NotesListScreen(
                 }
             }
         ) { padding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(notes, key = { it.uid }) { note ->
-                    MatrixNoteItem(
-                        note = note,
-                        onClick = { onNoteClick(note) },
-                        modifier = Modifier.animateItemPlacement()
-                    )
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = matrixGreen)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(state.notes, key = { it.uid }) { note ->
+                        SwipeableWrapper(
+                            onSwipeDelete = { viewModel.handleEvent(NotesListEvent.DeleteNote(note)) }
+                        ) {
+                            MatrixNoteItem(
+                                note = note,
+                                onClick = { onNoteClick(note) },
+                                modifier = Modifier.animateItemPlacement()
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -136,7 +132,7 @@ fun NotesListScreen(
 private fun MatrixNoteItem(
     note: Note,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -208,7 +204,7 @@ private fun MatrixText(
     text: String,
     fontSize: androidx.compose.ui.unit.TextUnit,
     modifier: Modifier = Modifier,
-    alpha: Float = 1f
+    alpha: Float = 1f,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val glitchOffset by infiniteTransition.animateFloat(
@@ -243,33 +239,4 @@ private fun MatrixText(
         modifier = modifier,
         fontFamily = FontFamily.Monospace
     )
-}
-
-@Composable
-fun ImportanceIndicator(importance: Importance) {
-    val color = when (importance) {
-        Importance.HIGH -> Color.Red
-        Importance.NORMAL -> matrixGreen
-        Importance.LOW -> Color(0xFF666666)
-    }
-    val pulseColor by rememberInfiniteTransition().animateColor(
-        initialValue = color.copy(alpha = 0.3f),
-        targetValue = color,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    Canvas(modifier = Modifier.size(10.dp)) {
-        drawCircle(
-            color = pulseColor,
-            radius = size.minDimension / 2,
-            style = Stroke(width = 2.dp.toPx())
-        )
-        drawCircle(
-            color = color,
-            radius = size.minDimension / 3
-        )
-    }
 }
