@@ -1,8 +1,8 @@
 package com.grotesquer.cybernotes
 
 import android.app.Application
-import com.grotesquer.cybernotes.di.AppContainer
-import com.grotesquer.cybernotes.di.NotesAppContainer
+import com.grotesquer.cybernotes.di.container.AppContainer
+import com.grotesquer.cybernotes.di.container.NotesAppContainer
 
 class CyberNotesApplication: Application(){
     lateinit var container: AppContainer

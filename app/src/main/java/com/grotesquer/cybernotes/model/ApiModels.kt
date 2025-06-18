@@ -9,7 +9,7 @@ data class PatchNotesRequest(
 )
 
 @Serializable
-data class ElementRequest(
+data class DtoRequest(
     @SerialName("element") val noteDto: NoteDto
 )
 

@@ -128,7 +128,11 @@ class NoteEditViewModel(
     private fun saveNote() {
         viewModelScope.launch {
             try {
-                repository.updateNote(updatedNote = _state.value.note)
+                if (noteUid == "new") {
+                    repository.addNote(note = _state.value.note)
+                } else {
+                    repository.updateNote(updatedNote = _state.value.note)
+                }
                 _effects.emit(NoteEditEffect.NavigateBack)
             } catch (e: Exception) {
                 _effects.emit(NoteEditEffect.ShowError("Failed to save note: ${e.message}"))

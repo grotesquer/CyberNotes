@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -80,7 +79,8 @@ fun NotesListScreen(
             ) {
                 items(state.notes, key = { it.uid }) { note ->
                     SwipeableWrapper(
-                        onSwipeDelete = { viewModel.handleEvent(NotesListEvent.DeleteNote(note)) }
+                        onSwipeDelete = { viewModel.handleEvent(NotesListEvent.DeleteNote(note)) },
+                        binIntColor = note.color
                     ) {
                         MatrixNoteItem(
                             note = note,

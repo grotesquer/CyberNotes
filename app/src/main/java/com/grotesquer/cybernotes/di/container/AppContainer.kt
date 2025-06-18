@@ -1,4 +1,4 @@
-package com.grotesquer.cybernotes.di
+package com.grotesquer.cybernotes.di.container
 
 import com.grotesquer.cybernotes.data.NoteRepository
 

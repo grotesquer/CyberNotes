@@ -1,17 +1,20 @@
 package com.grotesquer.cybernotes.data
 
+import com.grotesquer.cybernotes.data.remote.RemoteNoteDataSource
 import com.grotesquer.cybernotes.model.Note
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.combine
 
 class NoteRepository(
     private val localDataSource: NoteDataSource,
-    private val remoteDataSource: NoteDataSource
+    private val remoteDataSource: RemoteNoteDataSource
 ) : NoteDataSource {
-    override val notesFlow: Flow<List<Note>> = flow {
-        emitAll(localDataSource.notesFlow)
-    }
+    override val notesFlow: Flow<List<Note>> =
+        combine(localDataSource.notesFlow, remoteDataSource.notesFlow) { local, remote ->
+            remote + local.filter { localNote ->
+                remote.none { it.uid == localNote.uid }
+            }
+        }
 
     override suspend fun addNote(note: Note) {
         localDataSource.addNote(note)
@@ -31,5 +34,9 @@ class NoteRepository(
     override suspend fun updateNote(updatedNote: Note) {
         localDataSource.updateNote(updatedNote)
         remoteDataSource.updateNote(updatedNote)
+    }
+
+    suspend fun sync() {
+        remoteDataSource.syncNotes()
     }
 }

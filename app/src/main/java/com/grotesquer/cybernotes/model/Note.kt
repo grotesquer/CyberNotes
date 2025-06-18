@@ -4,6 +4,7 @@ import android.graphics.Color
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.UUID
 
 data class Note private constructor(
@@ -12,7 +13,8 @@ data class Note private constructor(
     val content: String,
     val color: Int,
     val importance: Importance,
-    val selfDestructDate: LocalDate?
+    val selfDestructDate: LocalDate? = null,
+    val createdAt: Date
 ) {
     companion object {
         private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -23,6 +25,7 @@ data class Note private constructor(
             color: Int = Color.WHITE,
             importance: Importance = Importance.NORMAL,
             selfDestructDate: LocalDate? = null,
+            createdAt: Date = Date(),
             uid: String = UUID.randomUUID().toString()
         ): Note {
             return Note(
@@ -31,7 +34,8 @@ data class Note private constructor(
                 content = content,
                 color = color,
                 importance = importance,
-                selfDestructDate = selfDestructDate
+                selfDestructDate = selfDestructDate,
+                createdAt = createdAt
             )
         }
 

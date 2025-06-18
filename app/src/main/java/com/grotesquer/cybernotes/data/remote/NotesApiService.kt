@@ -1,6 +1,6 @@
 package com.grotesquer.cybernotes.data.remote
 
-import com.grotesquer.cybernotes.model.ElementRequest
+import com.grotesquer.cybernotes.model.DtoRequest
 import com.grotesquer.cybernotes.model.ElementResponse
 import com.grotesquer.cybernotes.model.GetNotesResponse
 import com.grotesquer.cybernotes.model.PatchNotesRequest
@@ -18,7 +18,7 @@ interface NotesApiService {
     @POST("list")
     suspend fun addNote(
         @Header("X-Last-Known-Revision") revision: Int,
-        @Body request: ElementRequest,
+        @Body request: DtoRequest,
         @Header("X-Generate-Fails") generateFailsThreshold: Int? = null,
     ): ElementResponse
 
@@ -26,7 +26,7 @@ interface NotesApiService {
     suspend fun updateNote(
         @Header("X-Last-Known-Revision") revision: Int,
         @Path("id") noteUid: String,
-        @Body request: ElementRequest,
+        @Body request: DtoRequest,
         @Header("X-Generate-Fails") generateFailsThreshold: Int? = null,
     ): ElementResponse
 
