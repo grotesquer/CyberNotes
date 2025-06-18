@@ -1,14 +1,13 @@
 package com.grotesquer.cybernotes.ui
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.grotesquer.cybernotes.model.Note
+import androidx.navigation.navArgument
 import com.grotesquer.cybernotes.ui.edit_note.NoteEditScreen
 import com.grotesquer.cybernotes.ui.list_notes.NotesListScreen
-import com.grotesquer.cybernotes.ui.list_notes.NotesListViewModel
-
 
 @Composable
 fun NotesApp() {
@@ -16,38 +15,27 @@ fun NotesApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "notes_list"
+        startDestination = Screen.NotesList.route
     ) {
-        composable("notes_list") {
+        composable(Screen.NotesList.route) {
             NotesListScreen(
                 onNoteClick = { note ->
-                    navController.navigate("edit_note/${note.uid}")
+                    navController.navigate(Screen.NoteEdit.createRoute(note.uid))
                 },
                 onAddNote = {
-                    navController.navigate("edit_note/new")
+                    navController.navigate(Screen.NoteEdit.createRoute("new"))
                 }
             )
         }
-        composable("edit_note/{noteId}") { backStackEntry ->
+        composable(
+            route = Screen.NoteEdit.route,
+            arguments = listOf(navArgument("noteId") { type = NavType.StringType })
+        ) { backStackEntry ->
             val noteId = backStackEntry.arguments?.getString("noteId") ?: "new"
-            val note = if (noteId == "new") {
-                Note.create(title = "", content = "")
-            } else {
-                Note.create(
-                    title = "Existing Note",
-                    content = "Note content",
-                    uid = noteId
-                )
-            }
 
             NoteEditScreen(
-                note = note,
-                onSave = { savedNote ->
-                    navController.popBackStack()
-                },
-                onCancel = {
-                    navController.popBackStack()
-                }
+                noteId = noteId,
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -53,6 +53,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +67,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -82,14 +84,24 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditScreen(
-    note: Note,
-    onSave: (Note) -> Unit,
-    onCancel: () -> Unit,
+    noteId: String,
+    viewModel: NoteEditViewModel = NoteEditViewModel(Note.create("", "")),
+    onBack: () -> Unit
 ) {
-    var editedNote by remember { mutableStateOf(note) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showColorPicker by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    val state = viewModel.state
+
+    LaunchedEffect(key1 = noteId) {
+        viewModel.handleEvent(NoteEditEvent.LoadNote(noteId))
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                NoteEditEffect.NavigateBack -> onBack()
+                is NoteEditEffect.ShowError -> {}
+            }
+        }
+    }
 
     val infiniteTransition = rememberInfiniteTransition()
     val scanLinePosition by infiniteTransition.animateFloat(
@@ -126,12 +138,12 @@ fun NoteEditScreen(
                 TopAppBar(
                     title = {},
                     navigationIcon = {
-                        TextButton(onClick = { onCancel() }) {
+                        TextButton(onClick = { viewModel.handleEvent(NoteEditEvent.Cancel) }) {
                             Text("ОТМЕНА", color = Color.Red)
                         }
                     },
                     actions = {
-                        TextButton(onClick = { onSave(editedNote) }) {
+                        TextButton(onClick = { viewModel.handleEvent(NoteEditEvent.SaveNote) }) {
                             Text("СОХРАНИТЬ", color = matrixGreen)
                         }
                     },
@@ -145,12 +157,12 @@ fun NoteEditScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .verticalScroll(scrollState)
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
             ) {
                 MatrixTextField(
-                    value = editedNote.title,
-                    onValueChange = { editedNote = editedNote.copy(title = it) },
+                    value = state.note.title,
+                    onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateTitle(it)) },
                     label = "НАЗВАНИЕ",
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -158,8 +170,8 @@ fun NoteEditScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 MatrixTextField(
-                    value = editedNote.content,
-                    onValueChange = { editedNote = editedNote.copy(content = it) },
+                    value = state.note.content,
+                    onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateContent(it)) },
                     label = "СОДЕРЖАНИЕ",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -170,62 +182,63 @@ fun NoteEditScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 SelfDestructSection(
-                    hasSelfDestruct = editedNote.selfDestructDate != null,
-                    selfDestructDate = editedNote.selfDestructDate,
-                    onSelfDestructChange = { enabled ->
-                        editedNote = editedNote.copy(
-                            selfDestructDate = if (enabled) LocalDate.now().plusDays(7) else null
-                        )
-                    },
+                    hasSelfDestruct = state.note.selfDestructDate != null,
+                    selfDestructDate = state.note.selfDestructDate,
+                    onSelfDestructChange = { viewModel.handleEvent(NoteEditEvent.UpdateSelfDestruct(it)) },
                     onDateSelected = { date ->
-                        editedNote = editedNote.copy(selfDestructDate = date)
-                        showDatePicker = false
+                        viewModel.handleEvent(NoteEditEvent.UpdateSelfDestructDate(date))
+                        viewModel.handleEvent(NoteEditEvent.HideDatePicker)
                     },
-                    showDatePicker = showDatePicker,
-                    onShowDatePicker = { showDatePicker = it }
+                    showDatePicker = state.showDatePicker,
+                    onShowDatePicker = { show ->
+                        if (show) viewModel.handleEvent(NoteEditEvent.ShowDatePicker)
+                        else viewModel.handleEvent(NoteEditEvent.HideDatePicker)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 ColorSelectionSection(
-                    selectedColor = Color(editedNote.color),
+                    selectedColor = Color(state.note.color),
                     onColorSelected = { color ->
-                        editedNote = editedNote.copy(color = color.toArgb())
+                        viewModel.handleEvent(NoteEditEvent.UpdateColor(color.toArgb()))
+                        viewModel.handleEvent(NoteEditEvent.HideColorPicker)
                     },
-                    showColorPicker = showColorPicker,
-                    onShowColorPicker = { showColorPicker = it }
+                    showColorPicker = state.showColorPicker,
+                    onShowColorPicker = { show ->
+                        if (show) viewModel.handleEvent(NoteEditEvent.ShowColorPicker)
+                        else viewModel.handleEvent(NoteEditEvent.HideColorPicker)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 ImportanceSelectionSection(
-                    importance = editedNote.importance,
+                    importance = state.note.importance,
                     onImportanceSelected = { importance ->
-                        editedNote = editedNote.copy(importance = importance)
+                        viewModel.handleEvent(NoteEditEvent.UpdateImportance(importance))
                     }
                 )
             }
         }
     }
 
-    if (showDatePicker) {
+    if (state.showDatePicker) {
         DatePickerDialog(
-            onDismiss = { showDatePicker = false },
+            onDismiss = { viewModel.handleEvent(NoteEditEvent.HideDatePicker) },
             onDateSelected = { date ->
-                editedNote = editedNote.copy(selfDestructDate = date)
-                showDatePicker = false
+                viewModel.handleEvent(NoteEditEvent.UpdateSelfDestructDate(date))
             }
         )
     }
 
-    if (showColorPicker) {
+    if (state.showColorPicker) {
         ColorPickerDialog(
-            initialColor = Color(editedNote.color),
+            initialColor = Color(state.note.color),
             onColorSelected = { color ->
-                editedNote = editedNote.copy(color = color.toArgb())
-                showColorPicker = false
+                viewModel.handleEvent(NoteEditEvent.UpdateColor(color.toArgb()))
             },
-            onDismiss = { showColorPicker = false }
+            onDismiss = { viewModel.handleEvent(NoteEditEvent.HideColorPicker) }
         )
     }
 }
