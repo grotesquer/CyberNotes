@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -29,6 +28,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.grotesquer.cybernotes.di.AppViewModelProvider
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
@@ -38,7 +39,7 @@ import com.grotesquer.cybernotes.ui.theme.matrixGreen
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotesListScreen(
-    viewModel: NotesListViewModel = NotesListViewModel(),
+    viewModel: NotesListViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onNoteClick: (Note) -> Unit = { viewModel.handleEvent(NotesListEvent.SelectNote(it)) },
     onAddNote: () -> Unit = { viewModel.handleEvent(NotesListEvent.AddNote) }
 ) {

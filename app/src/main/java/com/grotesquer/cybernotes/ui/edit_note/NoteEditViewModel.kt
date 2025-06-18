@@ -1,27 +1,37 @@
 package com.grotesquer.cybernotes.ui.edit_note
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.grotesquer.cybernotes.data.FileNotebook
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
+import com.grotesquer.cybernotes.ui.itemIdArg
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class NoteEditViewModel(
-    note: Note
+    savedStateHandle: SavedStateHandle,
+    private val repository: FileNotebook
 ) : ViewModel() {
-    private val _state = mutableStateOf(NoteEditState(note))
+    private val noteUid: String = checkNotNull(savedStateHandle[itemIdArg])
+
+    private val _state = mutableStateOf(NoteEditState())
     val state: NoteEditState get() = _state.value
 
     private val _effects = MutableSharedFlow<NoteEditEffect>()
     val effects: SharedFlow<NoteEditEffect> = _effects
 
+    init {
+        loadNote()
+    }
+
     fun handleEvent(event: NoteEditEvent) {
         when (event) {
-            is NoteEditEvent.LoadNote -> loadNote(event.noteId)
+            is NoteEditEvent.LoadNote -> loadNote()
             is NoteEditEvent.UpdateTitle -> updateTitle(event.title)
             is NoteEditEvent.UpdateContent -> updateContent(event.content)
             is NoteEditEvent.UpdateSelfDestruct -> updateSelfDestruct(event.enabled)
@@ -37,18 +47,28 @@ class NoteEditViewModel(
         }
     }
 
-    private fun loadNote(noteId: String) {
-        _state.value = _state.value.copy(
-            note = if (noteId == "new") {
-                Note.create(title = "", content = "")
-            } else {
-                Note.create(
-                    title = "Existing Note",
-                    content = "Note content",
-                    uid = noteId
+    private fun loadNote() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            try {
+                val note = if (noteUid == "new") {
+                    Note.create(title = "", content = "")
+                } else {
+                    repository.getNoteByUid(noteUid) ?: Note.create(
+                        title = "Not Found",
+                        content = "Note with id $noteUid not found",
+                        uid = noteUid
+                    )
+                }
+                _state.value = _state.value.copy(note = note, isLoading = false)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = "Failed to load note: ${e.message}",
+                    isLoading = false
                 )
+                _effects.emit(NoteEditEffect.ShowError("Failed to load note"))
             }
-        )
+        }
     }
 
     private fun updateTitle(title: String) {
@@ -107,7 +127,12 @@ class NoteEditViewModel(
 
     private fun saveNote() {
         viewModelScope.launch {
-            _effects.emit(NoteEditEffect.NavigateBack)
+            try {
+                repository.updateNote(updatedNote = _state.value.note)
+                _effects.emit(NoteEditEffect.NavigateBack)
+            } catch (e: Exception) {
+                _effects.emit(NoteEditEffect.ShowError("Failed to save note: ${e.message}"))
+            }
         }
     }
 

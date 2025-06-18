@@ -29,12 +29,11 @@ fun NotesApp() {
         }
         composable(
             route = Screen.NoteEdit.route,
-            arguments = listOf(navArgument("noteId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val noteId = backStackEntry.arguments?.getString("noteId") ?: "new"
-
+            arguments = listOf(navArgument(itemIdArg) {
+                type = NavType.StringType
+            })
+        ) {
             NoteEditScreen(
-                noteId = noteId,
                 onBack = { navController.popBackStack() }
             )
         }

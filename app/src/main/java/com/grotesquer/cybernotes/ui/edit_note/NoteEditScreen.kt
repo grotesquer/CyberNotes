@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
@@ -40,6 +41,7 @@ import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -67,12 +69,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.grotesquer.cybernotes.di.AppViewModelProvider
 import com.grotesquer.cybernotes.model.Importance
-import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.ui.elements.ColorPickerDialog
 import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
 import com.grotesquer.cybernotes.ui.theme.matrixGreen
@@ -84,15 +86,10 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditScreen(
-    noteId: String,
-    viewModel: NoteEditViewModel = NoteEditViewModel(Note.create("", "")),
-    onBack: () -> Unit
+    viewModel: NoteEditViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    onBack: () -> Unit,
 ) {
     val state = viewModel.state
-
-    LaunchedEffect(key1 = noteId) {
-        viewModel.handleEvent(NoteEditEvent.LoadNote(noteId))
-    }
 
     LaunchedEffect(key1 = Unit) {
         viewModel.effects.collect { effect ->
@@ -138,8 +135,12 @@ fun NoteEditScreen(
                 TopAppBar(
                     title = {},
                     navigationIcon = {
-                        TextButton(onClick = { viewModel.handleEvent(NoteEditEvent.Cancel) }) {
-                            Text("ОТМЕНА", color = Color.Red)
+                        IconButton(onClick =  { viewModel.handleEvent(NoteEditEvent.Cancel) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = null
+                            )
                         }
                     },
                     actions = {
@@ -184,7 +185,13 @@ fun NoteEditScreen(
                 SelfDestructSection(
                     hasSelfDestruct = state.note.selfDestructDate != null,
                     selfDestructDate = state.note.selfDestructDate,
-                    onSelfDestructChange = { viewModel.handleEvent(NoteEditEvent.UpdateSelfDestruct(it)) },
+                    onSelfDestructChange = {
+                        viewModel.handleEvent(
+                            NoteEditEvent.UpdateSelfDestruct(
+                                it
+                            )
+                        )
+                    },
                     onDateSelected = { date ->
                         viewModel.handleEvent(NoteEditEvent.UpdateSelfDestructDate(date))
                         viewModel.handleEvent(NoteEditEvent.HideDatePicker)
@@ -249,7 +256,7 @@ private fun MatrixTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    maxLines: Int = 1
+    maxLines: Int = 1,
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
