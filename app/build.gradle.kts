@@ -5,6 +5,8 @@ plugins {
 
     kotlin("plugin.serialization") version "2.1.10"
     id("kotlin-kapt")
+    id("com.google.devtools.ksp") version "2.1.10-1.0.31"
+    id("androidx.room")
 }
 
 android {
@@ -40,9 +42,17 @@ android {
     buildFeatures {
         compose = true
     }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
+
+    // Room
+    implementation("androidx.room:room-runtime:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

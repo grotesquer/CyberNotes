@@ -1,7 +1,6 @@
-package com.grotesquer.cybernotes.data.local
+package com.grotesquer.cybernotes.data.local.file
 
 import android.content.Context
-import android.util.Log
 import com.grotesquer.cybernotes.data.NoteDataSource
 import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.model.Note.Companion.json
