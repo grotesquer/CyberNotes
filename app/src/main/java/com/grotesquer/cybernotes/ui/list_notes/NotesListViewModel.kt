@@ -2,7 +2,7 @@ package com.grotesquer.cybernotes.ui.list_notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.grotesquer.cybernotes.data.FileNotebook
+import com.grotesquer.cybernotes.data.NoteRepository
 import com.grotesquer.cybernotes.model.Note
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class NotesListViewModel(
-    private val repository: FileNotebook
+    private val repository: NoteRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(NotesListState())
     val state: StateFlow<NotesListState> = _state.asStateFlow()

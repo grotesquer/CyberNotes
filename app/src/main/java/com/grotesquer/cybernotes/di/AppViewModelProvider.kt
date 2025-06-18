@@ -14,14 +14,14 @@ object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
             NotesListViewModel(
-                repository = notesApplication().container.fileNotebook,
+                repository = notesApplication().container.repository,
             )
         }
 
         initializer {
             NoteEditViewModel(
                 savedStateHandle = this.createSavedStateHandle(),
-                repository = notesApplication().container.fileNotebook,
+                repository = notesApplication().container.repository,
             )
         }
     }

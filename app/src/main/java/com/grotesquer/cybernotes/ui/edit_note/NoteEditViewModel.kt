@@ -4,7 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.grotesquer.cybernotes.data.FileNotebook
+import com.grotesquer.cybernotes.data.NoteRepository
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.ui.itemIdArg
@@ -15,7 +15,7 @@ import java.time.LocalDate
 
 class NoteEditViewModel(
     savedStateHandle: SavedStateHandle,
-    private val repository: FileNotebook
+    private val repository: NoteRepository
 ) : ViewModel() {
     private val noteUid: String = checkNotNull(savedStateHandle[itemIdArg])
 
