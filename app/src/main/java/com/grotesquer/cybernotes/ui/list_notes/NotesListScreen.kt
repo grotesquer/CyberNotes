@@ -33,6 +33,7 @@ import com.grotesquer.cybernotes.di.AppViewModelProvider
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.model.Note
 import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
+import com.grotesquer.cybernotes.ui.elements.MatrixScreen
 import com.grotesquer.cybernotes.ui.elements.SwipeableWrapper
 import com.grotesquer.cybernotes.ui.theme.matrixGreen
 
@@ -41,86 +42,51 @@ import com.grotesquer.cybernotes.ui.theme.matrixGreen
 fun NotesListScreen(
     viewModel: NotesListViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onNoteClick: (Note) -> Unit = { viewModel.handleEvent(NotesListEvent.SelectNote(it)) },
-    onAddNote: () -> Unit = { viewModel.handleEvent(NotesListEvent.AddNote) }
+    onAddNote: () -> Unit = { viewModel.handleEvent(NotesListEvent.AddNote) },
 ) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(key1 = Unit) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is NotesListEffect.NavigateToNoteDetail -> {
-                    onNoteClick(effect.note)
-                }
-                NotesListEffect.NavigateToAddNote -> {
-                    onAddNote()
-                }
+                is NotesListEffect.NavigateToNoteDetail -> onNoteClick(effect.note)
+                NotesListEffect.NavigateToAddNote -> onAddNote()
             }
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition()
-    val scanLinePosition by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .drawWithCache {
-                val gradient = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        matrixGreen.copy(alpha = 0.1f),
-                        Color.Transparent
-                    ),
-                    startY = size.height * scanLinePosition - 100f,
-                    endY = size.height * scanLinePosition + 100f
-                )
-                onDrawBehind {
-                    drawRect(gradient)
-                }
+    MatrixScreen(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddNote,
+                containerColor = matrixGreen,
+                contentColor = Color.Black
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add note")
             }
-    ) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = onAddNote,
-                    containerColor = matrixGreen,
-                    contentColor = Color.Black
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add note")
-                }
+        }
+    ) { padding ->
+        if (state.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = matrixGreen)
             }
-        ) { padding ->
-            if (state.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = matrixGreen)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.notes, key = { it.uid }) { note ->
-                        SwipeableWrapper(
-                            onSwipeDelete = { viewModel.handleEvent(NotesListEvent.DeleteNote(note)) }
-                        ) {
-                            MatrixNoteItem(
-                                note = note,
-                                onClick = { onNoteClick(note) },
-                                modifier = Modifier.animateItemPlacement()
-                            )
-                        }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(state.notes, key = { it.uid }) { note ->
+                    SwipeableWrapper(
+                        onSwipeDelete = { viewModel.handleEvent(NotesListEvent.DeleteNote(note)) }
+                    ) {
+                        MatrixNoteItem(
+                            note = note,
+                            onClick = { onNoteClick(note) },
+                            modifier = Modifier.animateItemPlacement()
+                        )
                     }
                 }
             }

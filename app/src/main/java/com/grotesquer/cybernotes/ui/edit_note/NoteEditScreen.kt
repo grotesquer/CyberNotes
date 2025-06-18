@@ -1,11 +1,5 @@
 package com.grotesquer.cybernotes.ui.edit_note
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,7 +40,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -63,7 +56,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -77,6 +69,7 @@ import com.grotesquer.cybernotes.di.AppViewModelProvider
 import com.grotesquer.cybernotes.model.Importance
 import com.grotesquer.cybernotes.ui.elements.ColorPickerDialog
 import com.grotesquer.cybernotes.ui.elements.ImportanceIndicator
+import com.grotesquer.cybernotes.ui.elements.MatrixScreen
 import com.grotesquer.cybernotes.ui.theme.matrixGreen
 import java.time.Instant
 import java.time.LocalDate
@@ -100,133 +93,101 @@ fun NoteEditScreen(
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition()
-    val scanLinePosition by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .drawWithCache {
-                val gradient = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        matrixGreen.copy(alpha = 0.1f),
-                        Color.Transparent
-                    ),
-                    startY = size.height * scanLinePosition - 100f,
-                    endY = size.height * scanLinePosition + 100f
-                )
-                onDrawBehind {
-                    drawRect(gradient)
-                }
-            }
-    ) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            topBar = {
-                TopAppBar(
-                    title = {},
-                    navigationIcon = {
-                        IconButton(onClick =  { viewModel.handleEvent(NoteEditEvent.Cancel) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    actions = {
-                        TextButton(onClick = { viewModel.handleEvent(NoteEditEvent.SaveNote) }) {
-                            Text("СОХРАНИТЬ", color = matrixGreen)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Black.copy(alpha = 0.8f)
-                    )
-                )
-            }
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
-            ) {
-                MatrixTextField(
-                    value = state.note.title,
-                    onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateTitle(it)) },
-                    label = "НАЗВАНИЕ",
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                MatrixTextField(
-                    value = state.note.content,
-                    onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateContent(it)) },
-                    label = "СОДЕРЖАНИЕ",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 150.dp),
-                    maxLines = Int.MAX_VALUE
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SelfDestructSection(
-                    hasSelfDestruct = state.note.selfDestructDate != null,
-                    selfDestructDate = state.note.selfDestructDate,
-                    onSelfDestructChange = {
-                        viewModel.handleEvent(
-                            NoteEditEvent.UpdateSelfDestruct(
-                                it
-                            )
+    MatrixScreen(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = { viewModel.handleEvent(NoteEditEvent.Cancel) }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = null
                         )
-                    },
-                    onDateSelected = { date ->
-                        viewModel.handleEvent(NoteEditEvent.UpdateSelfDestructDate(date))
-                        viewModel.handleEvent(NoteEditEvent.HideDatePicker)
-                    },
-                    showDatePicker = state.showDatePicker,
-                    onShowDatePicker = { show ->
-                        if (show) viewModel.handleEvent(NoteEditEvent.ShowDatePicker)
-                        else viewModel.handleEvent(NoteEditEvent.HideDatePicker)
                     }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                ColorSelectionSection(
-                    selectedColor = Color(state.note.color),
-                    onColorSelected = { color ->
-                        viewModel.handleEvent(NoteEditEvent.UpdateColor(color.toArgb()))
-                        viewModel.handleEvent(NoteEditEvent.HideColorPicker)
-                    },
-                    showColorPicker = state.showColorPicker,
-                    onShowColorPicker = { show ->
-                        if (show) viewModel.handleEvent(NoteEditEvent.ShowColorPicker)
-                        else viewModel.handleEvent(NoteEditEvent.HideColorPicker)
+                },
+                actions = {
+                    TextButton(onClick = { viewModel.handleEvent(NoteEditEvent.SaveNote) }) {
+                        Text("СОХРАНИТЬ", color = matrixGreen)
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Black.copy(alpha = 0.8f)
                 )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            MatrixTextField(
+                value = state.note.title,
+                onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateTitle(it)) },
+                label = "НАЗВАНИЕ",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                ImportanceSelectionSection(
-                    importance = state.note.importance,
-                    onImportanceSelected = { importance ->
-                        viewModel.handleEvent(NoteEditEvent.UpdateImportance(importance))
-                    }
-                )
-            }
+            MatrixTextField(
+                value = state.note.content,
+                onValueChange = { viewModel.handleEvent(NoteEditEvent.UpdateContent(it)) },
+                label = "СОДЕРЖАНИЕ",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 150.dp),
+                maxLines = Int.MAX_VALUE
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            SelfDestructSection(
+                hasSelfDestruct = state.note.selfDestructDate != null,
+                selfDestructDate = state.note.selfDestructDate,
+                onSelfDestructChange = {
+                    viewModel.handleEvent(
+                        NoteEditEvent.UpdateSelfDestruct(
+                            it
+                        )
+                    )
+                },
+                onDateSelected = { date ->
+                    viewModel.handleEvent(NoteEditEvent.UpdateSelfDestructDate(date))
+                    viewModel.handleEvent(NoteEditEvent.HideDatePicker)
+                },
+                showDatePicker = state.showDatePicker,
+                onShowDatePicker = { show ->
+                    if (show) viewModel.handleEvent(NoteEditEvent.ShowDatePicker)
+                    else viewModel.handleEvent(NoteEditEvent.HideDatePicker)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            ColorSelectionSection(
+                selectedColor = Color(state.note.color),
+                onColorSelected = { color ->
+                    viewModel.handleEvent(NoteEditEvent.UpdateColor(color.toArgb()))
+                    viewModel.handleEvent(NoteEditEvent.HideColorPicker)
+                },
+                showColorPicker = state.showColorPicker,
+                onShowColorPicker = { show ->
+                    if (show) viewModel.handleEvent(NoteEditEvent.ShowColorPicker)
+                    else viewModel.handleEvent(NoteEditEvent.HideColorPicker)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            ImportanceSelectionSection(
+                importance = state.note.importance,
+                onImportanceSelected = { importance ->
+                    viewModel.handleEvent(NoteEditEvent.UpdateImportance(importance))
+                }
+            )
         }
     }
 
