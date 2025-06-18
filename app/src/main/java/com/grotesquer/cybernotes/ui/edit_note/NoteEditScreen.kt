@@ -467,28 +467,7 @@ private fun DatePickerDialog(
             }
         },
     ) {
-        DatePicker(
-            state = datePickerState,
-            colors = DatePickerDefaults.colors(
-                containerColor = Color.Black,
-                titleContentColor = matrixGreen,
-                headlineContentColor = matrixGreen,
-                weekdayContentColor = matrixGreen,
-                subheadContentColor = matrixGreen,
-                navigationContentColor = matrixGreen,
-                yearContentColor = matrixGreen,
-                currentYearContentColor = matrixGreen,
-                selectedYearContentColor = Color.Black,
-                selectedYearContainerColor = matrixGreen,
-                dayContentColor = matrixGreen,
-                disabledDayContentColor = matrixGreen.copy(alpha = 0.3f),
-                selectedDayContentColor = Color.Black,
-                selectedDayContainerColor = matrixGreen,
-                disabledSelectedDayContainerColor = matrixGreen.copy(alpha = 0.3f),
-                todayContentColor = matrixGreen,
-                todayDateBorderColor = matrixGreen
-            )
-        )
+        DatePicker(state = datePickerState)
     }
 }
 
